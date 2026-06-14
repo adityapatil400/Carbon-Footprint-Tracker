@@ -43,12 +43,21 @@ export default function Onboarding() {
 
   const createProfile = useCreateProfile();
 
-  const onSubmit = (data: z.infer<typeof onboardingSchema>) => {
+  const stepFields: Record<number, (keyof z.infer<typeof onboardingSchema>)[]> = {
+    1: ["name", "country"],
+    2: ["householdSize", "dietType"],
+    3: ["carType", "homeEnergySource"],
+    4: ["flightsPerYear"],
+  };
+
+  const handleNext = async () => {
+    const valid = await form.trigger(stepFields[step]);
+    if (!valid) return;
     if (step < totalSteps) {
       setStep(step + 1);
       return;
     }
-
+    const data = form.getValues();
     createProfile.mutate(
       { data: { ...data, onboardingComplete: true } },
       {
@@ -59,6 +68,8 @@ export default function Onboarding() {
       }
     );
   };
+
+  const onSubmit = () => {};
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
@@ -253,7 +264,8 @@ export default function Onboarding() {
                   ) : <div></div>}
                   
                   <Button 
-                    type="submit" 
+                    type="button"
+                    onClick={handleNext}
                     className="h-12 px-8 ml-auto"
                     disabled={createProfile.isPending}
                   >
