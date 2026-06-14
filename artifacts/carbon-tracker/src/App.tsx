@@ -1,28 +1,67 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useGetProfile, getGetProfileQueryKey } from "@workspace/api-client-react";
+import { useEffect } from "react";
+
 import NotFound from "@/pages/not-found";
+import Onboarding from "@/pages/onboarding";
+import Dashboard from "@/pages/dashboard";
+import LogEmission from "@/pages/log-emission";
+import History from "@/pages/history";
+import Recommendations from "@/pages/recommendations";
+import Actions from "@/pages/actions";
+import Settings from "@/pages/settings";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-function Home() {
-  return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Replit Agent is building...</h1>
-        <p className="mt-2 text-sm text-gray-600">Your app will appear here once it's ready.</p>
-      </div>
-    </div>
-  );
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const [location, setLocation] = useLocation();
+  const { data: profile, isLoading, isError } = useGetProfile({ query: { queryKey: getGetProfileQueryKey() } });
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (isError || !profile || !profile.onboardingComplete) {
+      if (location !== "/") {
+        setLocation("/");
+      }
+    } else {
+      if (location === "/") {
+        setLocation("/dashboard");
+      }
+    }
+  }, [profile, isLoading, isError, location, setLocation]);
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center bg-background"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>;
+  }
+
+  return <>{children}</>;
 }
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route component={NotFound} />
-    </Switch>
+    <AuthGuard>
+      <Switch>
+        <Route path="/" component={Onboarding} />
+        <Route path="/dashboard" component={Dashboard} />
+        <Route path="/log" component={LogEmission} />
+        <Route path="/history" component={History} />
+        <Route path="/recommendations" component={Recommendations} />
+        <Route path="/actions" component={Actions} />
+        <Route path="/settings" component={Settings} />
+        <Route component={NotFound} />
+      </Switch>
+    </AuthGuard>
   );
 }
 
