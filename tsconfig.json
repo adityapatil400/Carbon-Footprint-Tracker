@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.base.json",
-  "compileOnSave": false,
+  "compileOnSave": false,"esModuleInterop": true
   "files": [],
   "references": [
     {
