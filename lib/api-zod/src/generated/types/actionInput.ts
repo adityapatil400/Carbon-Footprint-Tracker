@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface ActionInput {
+  title: string;
+  category: string;
+  co2SavedKg: number;
+  /** @nullable */
+  notes?: string | null;
 }

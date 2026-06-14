@@ -6,6 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
-}
+export type ListEmissionsParams = {
+/**
+ * Filter by category
+ */
+category?: string;
+/**
+ * Max results
+ */
+limit?: number;
+};

@@ -3,13 +3,23 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Carbon Footprint Tracker API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: profile
+    description: User profile and onboarding
+  - name: emissions
+    description: Emissions log entries
+  - name: recommendations
+    description: AI-driven reduction recommendations
+  - name: dashboard
+    description: Dashboard summaries and insights
+  - name: actions
+    description: Completed reduction actions
 paths:
   /healthz:
     get:
@@ -24,6 +34,298 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /profile:
+    get:
+      operationId: getProfile
+      tags: [profile]
+      summary: Get user profile
+      responses:
+        "200":
+          description: Profile found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "404":
+          description: No profile yet
+    post:
+      operationId: createProfile
+      tags: [profile]
+      summary: Create or upsert user profile (onboarding)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileInput"
+      responses:
+        "201":
+          description: Profile created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+    patch:
+      operationId: updateProfile
+      tags: [profile]
+      summary: Update user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdate"
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+
+  /emissions:
+    get:
+      operationId: listEmissions
+      tags: [emissions]
+      summary: List all emissions log entries
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+          description: Filter by category
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: Max results
+      responses:
+        "200":
+          description: List of emissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EmissionEntry"
+    post:
+      operationId: createEmission
+      tags: [emissions]
+      summary: Log a new emission entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmissionInput"
+      responses:
+        "201":
+          description: Emission logged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmissionEntry"
+
+  /emissions/{id}:
+    get:
+      operationId: getEmission
+      tags: [emissions]
+      summary: Get a single emission entry
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Emission entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmissionEntry"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateEmission
+      tags: [emissions]
+      summary: Update an emission entry
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmissionUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmissionEntry"
+    delete:
+      operationId: deleteEmission
+      tags: [emissions]
+      summary: Delete an emission entry
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get overall carbon footprint summary and stats
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/trends:
+    get:
+      operationId: getDashboardTrends
+      tags: [dashboard]
+      summary: Get emissions trend over time (weekly/monthly totals)
+      parameters:
+        - in: query
+          name: period
+          schema:
+            type: string
+            enum: [weekly, monthly]
+          description: Aggregation period
+      responses:
+        "200":
+          description: Trend data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrendPoint"
+
+  /dashboard/category-breakdown:
+    get:
+      operationId: getCategoryBreakdown
+      tags: [dashboard]
+      summary: Get emissions breakdown by category
+      responses:
+        "200":
+          description: Category breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryBreakdown"
+
+  /recommendations:
+    get:
+      operationId: listRecommendations
+      tags: [recommendations]
+      summary: Get personalized AI-driven reduction recommendations
+      responses:
+        "200":
+          description: Recommendations list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Recommendation"
+    post:
+      operationId: generateRecommendations
+      tags: [recommendations]
+      summary: Generate fresh AI recommendations based on current emissions
+      responses:
+        "201":
+          description: Recommendations generated
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Recommendation"
+
+  /recommendations/{id}/dismiss:
+    patch:
+      operationId: dismissRecommendation
+      tags: [recommendations]
+      summary: Dismiss a recommendation
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dismissed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recommendation"
+
+  /actions:
+    get:
+      operationId: listActions
+      tags: [actions]
+      summary: List completed reduction actions
+      responses:
+        "200":
+          description: Actions list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CompletedAction"
+    post:
+      operationId: completeAction
+      tags: [actions]
+      summary: Mark a reduction action as completed
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActionInput"
+      responses:
+        "201":
+          description: Action recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompletedAction"
+
+  /actions/streak:
+    get:
+      operationId: getActionStreak
+      tags: [actions]
+      summary: Get current action streak and gamification stats
+      responses:
+        "200":
+          description: Streak info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StreakInfo"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +336,322 @@ components:
       required:
         - status
 
+    Profile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        country:
+          type: string
+        householdSize:
+          type: integer
+        dietType:
+          type: string
+          description: "vegan, vegetarian, omnivore, meat-heavy"
+        carType:
+          type: ["string", "null"]
+          description: "none, electric, hybrid, petrol, diesel"
+        homeEnergySource:
+          type: string
+          description: "renewable, mixed, fossil"
+        flightsPerYear:
+          type: integer
+        onboardingComplete:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+        - country
+        - householdSize
+        - dietType
+        - homeEnergySource
+        - flightsPerYear
+        - onboardingComplete
+        - createdAt
+        - updatedAt
+
+    ProfileInput:
+      type: object
+      properties:
+        name:
+          type: string
+        country:
+          type: string
+        householdSize:
+          type: integer
+        dietType:
+          type: string
+        carType:
+          type: ["string", "null"]
+        homeEnergySource:
+          type: string
+        flightsPerYear:
+          type: integer
+        onboardingComplete:
+          type: boolean
+      required:
+        - name
+        - country
+        - householdSize
+        - dietType
+        - homeEnergySource
+        - flightsPerYear
+
+    ProfileUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        country:
+          type: string
+        householdSize:
+          type: integer
+        dietType:
+          type: string
+        carType:
+          type: ["string", "null"]
+        homeEnergySource:
+          type: string
+        flightsPerYear:
+          type: integer
+        onboardingComplete:
+          type: boolean
+
+    EmissionEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        category:
+          type: string
+          description: "transportation, energy, food, consumption"
+        subcategory:
+          type: string
+        description:
+          type: string
+        co2Kg:
+          type: number
+          description: CO2 equivalent in kilograms
+        date:
+          type: string
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - category
+        - subcategory
+        - description
+        - co2Kg
+        - date
+        - createdAt
+
+    EmissionInput:
+      type: object
+      properties:
+        category:
+          type: string
+        subcategory:
+          type: string
+        description:
+          type: string
+        co2Kg:
+          type: number
+        date:
+          type: string
+        notes:
+          type: ["string", "null"]
+      required:
+        - category
+        - subcategory
+        - description
+        - co2Kg
+        - date
+
+    EmissionUpdate:
+      type: object
+      properties:
+        category:
+          type: string
+        subcategory:
+          type: string
+        description:
+          type: string
+        co2Kg:
+          type: number
+        date:
+          type: string
+        notes:
+          type: ["string", "null"]
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalCo2Kg:
+          type: number
+        monthlyAverageCo2Kg:
+          type: number
+        comparedToAveragePercent:
+          type: number
+          description: "Percentage vs global average (negative = better)"
+        topCategory:
+          type: string
+        streak:
+          type: integer
+          description: "Current action streak in days"
+        savedCo2Kg:
+          type: number
+          description: "Total CO2 saved through completed actions"
+        level:
+          type: string
+          description: "User's eco level: seedling, sapling, tree, forest"
+        totalEntries:
+          type: integer
+      required:
+        - totalCo2Kg
+        - monthlyAverageCo2Kg
+        - comparedToAveragePercent
+        - topCategory
+        - streak
+        - savedCo2Kg
+        - level
+        - totalEntries
+
+    TrendPoint:
+      type: object
+      properties:
+        period:
+          type: string
+        co2Kg:
+          type: number
+        entryCount:
+          type: integer
+      required:
+        - period
+        - co2Kg
+        - entryCount
+
+    CategoryBreakdown:
+      type: object
+      properties:
+        category:
+          type: string
+        co2Kg:
+          type: number
+        percentage:
+          type: number
+        entryCount:
+          type: integer
+      required:
+        - category
+        - co2Kg
+        - percentage
+        - entryCount
+
+    Recommendation:
+      type: object
+      properties:
+        id:
+          type: integer
+        category:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        estimatedSavingKg:
+          type: number
+        difficulty:
+          type: string
+          description: "easy, medium, hard"
+        impact:
+          type: string
+          description: "low, medium, high"
+        dismissed:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - category
+        - title
+        - description
+        - estimatedSavingKg
+        - difficulty
+        - impact
+        - dismissed
+        - createdAt
+
+    CompletedAction:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        category:
+          type: string
+        co2SavedKg:
+          type: number
+        completedAt:
+          type: string
+        notes:
+          type: ["string", "null"]
+      required:
+        - id
+        - title
+        - category
+        - co2SavedKg
+        - completedAt
+
+    ActionInput:
+      type: object
+      properties:
+        title:
+          type: string
+        category:
+          type: string
+        co2SavedKg:
+          type: number
+        notes:
+          type: ["string", "null"]
+      required:
+        - title
+        - category
+        - co2SavedKg
+
+    StreakInfo:
+      type: object
+      properties:
+        currentStreak:
+          type: integer
+        longestStreak:
+          type: integer
+        totalActions:
+          type: integer
+        totalSavedKg:
+          type: number
+        level:
+          type: string
+        nextLevelAt:
+          type: integer
+          description: "Actions needed for next level"
+        badges:
+          type: array
+          items:
+            type: string
+      required:
+        - currentStreak
+        - longestStreak
+        - totalActions
+        - totalSavedKg
+        - level
+        - nextLevelAt
+        - badges

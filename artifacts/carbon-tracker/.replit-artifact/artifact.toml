@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Carbon Footprint Tracker"
+version = "1.0.0"
+id = "artifacts/carbon-tracker"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18754
+
+[services.development]
+run = "pnpm --filter @workspace/carbon-tracker run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/carbon-tracker", "run", "build" ]
+publicDir = "artifacts/carbon-tracker/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18754"
+BASE_PATH = "/"
