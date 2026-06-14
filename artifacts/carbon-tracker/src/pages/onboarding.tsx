@@ -12,6 +12,89 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Leaf, ArrowRight, ArrowLeft } from "lucide-react";
 
+const DIET_CO2: Record<string, number> = {
+  vegan: 1500,
+  vegetarian: 1800,
+  omnivore: 2500,
+  "meat-heavy": 3300,
+};
+const CAR_CO2: Record<string, number> = {
+  none: 0,
+  electric: 500,
+  hybrid: 1200,
+  petrol: 2400,
+  diesel: 2800,
+};
+const ENERGY_CO2: Record<string, number> = {
+  renewable: 200,
+  mixed: 1200,
+  fossil: 2500,
+};
+const GLOBAL_AVG = 4000;
+
+function estimateAnnualCo2(
+  dietType: string,
+  carType: string | undefined,
+  homeEnergySource: string,
+  flightsPerYear: number
+) {
+  const diet = DIET_CO2[dietType] ?? 2500;
+  const car = CAR_CO2[carType ?? "none"] ?? 0;
+  const energy = ENERGY_CO2[homeEnergySource] ?? 1200;
+  const flights = flightsPerYear * 180;
+  return { diet, car, energy, flights, total: diet + car + energy + flights };
+}
+
+function EstimatePanel({
+  dietType,
+  carType,
+  homeEnergySource,
+  flightsPerYear,
+}: {
+  dietType: string;
+  carType?: string;
+  homeEnergySource: string;
+  flightsPerYear: number;
+}) {
+  const est = estimateAnnualCo2(dietType, carType, homeEnergySource, flightsPerYear);
+  const vsAvg = Math.round(((est.total - GLOBAL_AVG) / GLOBAL_AVG) * 100);
+  const rows = [
+    { label: "Food & diet", value: est.diet },
+    { label: "Transport", value: est.car },
+    { label: "Home energy", value: est.energy },
+    { label: "Flights", value: est.flights },
+  ];
+  return (
+    <div className="rounded-xl bg-primary/10 border border-primary/20 p-4 space-y-3 mt-2">
+      <p className="text-sm font-semibold text-primary">Your estimated footprint</p>
+      <div className="space-y-1.5">
+        {rows.map((r) => (
+          <div key={r.label} className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground w-28">{r.label}</span>
+            <div className="flex-1 h-2 bg-primary/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary/60 rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(100, (r.value / 3500) * 100)}%` }}
+              />
+            </div>
+            <span className="text-xs font-medium text-foreground w-16 text-right">
+              {r.value.toLocaleString()} kg
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-baseline justify-between pt-1 border-t border-primary/20">
+        <span className="text-sm font-bold text-foreground">
+          {est.total.toLocaleString()} kg CO₂/yr
+        </span>
+        <span className={`text-xs font-medium ${vsAvg <= 0 ? "text-green-600" : "text-amber-600"}`}>
+          {vsAvg > 0 ? "+" : ""}{vsAvg}% vs global avg
+        </span>
+      </div>
+    </div>
+  );
+}
+
 const onboardingSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   country: z.string().min(2, "Country must be at least 2 characters"),
@@ -57,7 +140,12 @@ export default function Onboarding() {
       setStep(step + 1);
       return;
     }
-    const data = form.getValues();
+    const raw = form.getValues();
+    const data = {
+      ...raw,
+      householdSize: Number(raw.householdSize),
+      flightsPerYear: Number(raw.flightsPerYear),
+    };
     createProfile.mutate(
       { data: { ...data, onboardingComplete: true } },
       {
@@ -241,12 +329,12 @@ export default function Onboarding() {
                         </FormItem>
                       )}
                     />
-                    
-                    <div className="p-4 bg-primary/10 rounded-lg mt-6">
-                      <p className="text-sm text-primary font-medium">
-                        You're all set! Let's start tracking and reducing your footprint.
-                      </p>
-                    </div>
+                    <EstimatePanel
+                      dietType={form.watch("dietType")}
+                      carType={form.watch("carType")}
+                      homeEnergySource={form.watch("homeEnergySource")}
+                      flightsPerYear={Number(form.watch("flightsPerYear")) || 0}
+                    />
                   </div>
                 )}
 
